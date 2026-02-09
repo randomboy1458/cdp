@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chocolate Day Game</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+        }
+        
+        /* Romantic Background */
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            perspective: 2000px;
+            background: linear-gradient(135deg, #1a0f0a 0%, #2c1a10 50%, #3d2515 100%);
+            overflow: hidden;
+            z-index: -1;
+        }
+        
+        .background-3d {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            left: -50%;
+            top: -50%;
+            transform-style: preserve-3d;
+            transform: rotateX(10deg) rotateY(0deg);
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        
+        .background-plane {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(139, 69, 19, 0.05);
+            border: 1px solid rgba(210, 105, 30, 0.1);
+            transform-style: preserve-3d;
+        }
+        
+        .background-plane.front {
+            transform: translateZ(800px);
+            background: radial-gradient(circle at center, rgba(210, 105, 30, 0.15) 0%, transparent 70%);
+        }
+        
+        .background-plane.back {
+            transform: translateZ(-800px);
+            background: radial-gradient(circle at center, rgba(139, 69, 19, 0.1) 0%, transparent 70%);
+        }
+        
+        /* Floating Hearts */
+        .heart {
+            position: absolute;
+            color: #ff6b9d;
+            font-size: 24px;
+            opacity: 0.3;
+            animation: floatHeart 15s infinite linear;
+        }
+        
+        @keyframes floatHeart {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-1000px) rotate(360deg); }
+        }
+        
+        /* Love Names Display */
+        .names-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(500px);
+            font-size: 48px;
+            color: #ff4d8d;
+            text-shadow: 0 0 20px rgba(255, 77, 141, 0.5);
+            font-family: 'Brush Script MT', cursive;
+            opacity: 0.8;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .names-display span {
+            display: inline-block;
+            animation: pulse 3s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        /* Secret Symbol (Hidden until 360°) */
+        .secret-symbol {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) translateZ(-700px) rotateY(180deg) scale(0);
+            font-size: 120px;
+            color: rgba(255, 77, 141, 0);
+            transition: all 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            filter: blur(10px);
+            text-align: center;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .secret-symbol.active {
+            color: rgba(255, 77, 141, 0.6);
+            filter: blur(0);
+            transform: translate(-50%, -50%) translateZ(-700px) rotateY(180deg) scale(1);
+            text-shadow: 0 0 30px rgba(255, 77, 141, 0.8);
+        }
+        
+        .secret-symbol i {
+            margin: 0 10px;
+        }
+        
+        .secret-text {
+            font-size: 28px;
+            font-family: 'Courier New', monospace;
+            margin-top: 30px;
+            color: #FFD700;
+            letter-spacing: 3px;
+        }
+        
+        .secret-subtext {
+            font-size: 18px;
+            margin-top: 20px;
+            opacity: 0.8;
+            font-style: italic;
+        }
+        
+        /* Secret Hint */
+        .secret-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 215, 0, 0.6);
+            font-size: 12px;
+            font-style: italic;
+            text-align: right;
+            max-width: 200px;
+            opacity: 0.5;
+            transition: opacity 0.5s;
+            z-index: 3;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 2px solid #D2691E;
+        }
+        
+        .secret-hint:hover {
+            opacity: 1;
+        }
+        
+        /* Main Game Container */
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+            background: rgba(26, 15, 10, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: 100px auto 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+        }
+        
+        .game-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(210, 105, 30, 0.3);
+        }
+        
+        .game-title {
+            color: #FFD700;
+            font-size: 2.8rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            margin-bottom: 10px;
+        }
+        
+        .game-subtitle {
+            color: #D2691E;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .game-instructions {
+            color: #8B4513;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        /* Chocolate Scene */
+        .scene {
+            width: 300px;
+            height: 500px;
+            margin: 0 auto 40px;
+            perspective: 1500px;
+            cursor: grab;
+            transform-style: preserve-3d;
+        }
+        
+        .scene:active {
+            cursor: grabbing;
+        }
+        
+        .chocolate-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+            transform: rotateX(15deg) rotateY(0deg);
+        }
+        
+        .chocolate-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #FFF8F0 0%, #F5E6D3 20%, #F0DFC8 100%);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 25px 15px;
+            overflow: hidden;
+            backface-visibility: visible;
+        }
+        
+        .chocolate-face.front {
+            transform: translateZ(20px);
+            box-shadow: 
+                inset 0 -8px 15px rgba(0, 0, 0, 0.1),
+                inset 0 8px 15px rgba(255, 255, 255, 0.7);
+            border: 3px solid rgba(210, 180, 140, 0.8);
+        }
+        
+        .chocolate-face.back {
+            transform: rotateY(180deg) translateZ(20px);
+            background: linear-gradient(to bottom, #F5E6D3 0%, #E8D0B3 20%, #DDC4A3 100%);
+            border: 3px solid rgba(190, 160, 120, 0.8);
+        }
+        
+        .chocolate-face.right {
+            transform: rotateY(90deg) translateZ(150px);
+            width: 40px;
+            background: linear-gradient(to right, #E8D0B3 0%, #DDC4A3 100%);
+            border-radius: 10px;
+        }
+        
+        .chocolate-face.left {
+            transform: rotateY(-90deg) translateZ(150px);
+            width: 40px;
+            background: linear-gradient(to right, #DDC4A3 0%, #E8D0B3 100%);
+            border-radius: 10px;
+        }
+        
+        .chocolate-face.top {
+            transform: rotateX(90deg) translateZ(250px);
+            height: 40px;
+            background: linear-gradient(to bottom, #FFF8F0 0%, #F5E6D3 100%);
+            border-radius: 10px;
+        }
+        
+        .chocolate-face.bottom {
+            transform: rotateX(-90deg) translateZ(250px);
+            height: 40px;
+            background: linear-gradient(to bottom, #DDC4A3 0%, #E8D0B3 100%);
+            border-radius: 10px;
+        }
+        
+        .bite-mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            transition: clip-path 0.5s ease;
+            z-index: 2;
+        }
+        
+        .chocolate-segments {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: space-between;
+            z-index: 1;
+        }
+        
+        .segment {
+            flex: 1;
+            margin: 5px 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            border: 2px solid rgba(210, 180, 140, 0.4);
+        }
+        
+        .bite-count {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            color: #FFD700;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            transform: translateZ(30px);
+            border: 2px solid #FFD700;
+        }
+        
+        .chocolate-wrapper {
+            position: relative;
+            transform-style: preserve-3d;
+            animation: floatChocolate 8s ease-in-out infinite;
+        }
+        
+        @keyframes floatChocolate {
+            0%, 100% { 
+                transform: translateY(0) rotateX(5deg); 
+            }
+            50% { 
+                transform: translateY(-30px) rotateX(10deg); 
+            }
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            color: #FFD700;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            font-weight: bold;
+        }
+        
+        .control-btn:hover {
+            background: linear-gradient(45deg, #D2691E, #8B4513);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .control-btn.active {
+            background: linear-gradient(45deg, #FFD700, #D2691E);
+            color: #8B4513;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* Instructions */
+        .instructions-box {
+            background: rgba(26, 15, 10, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(210, 105, 30, 0.3);
+        }
+        
+        .instruction {
+            color: #D2691E;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .instruction i {
+            color: #FFD700;
+            font-size: 1.2rem;
+        }
+        
+        /* Popup */
+        .message-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #2c1a10 0%, #1a0f0a 100%);
+            width: 90%;
+            max-width: 500px;
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            text-align: center;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #D2691E;
+        }
+        
+        .message-popup.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .message-popup h2 {
+            color: #FFD700;
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        .message-popup p {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            color: #D2691E;
+            margin-bottom: 30px;
+        }
+        
+        .message-popup button {
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            color: #FFD700;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .message-popup button:hover {
+            background: linear-gradient(45deg, #D2691E, #8B4513);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            color: #8B4513;
+            font-size: 1rem;
+            padding-top: 20px;
+            border-top: 1px solid rgba(210, 105, 30, 0.3);
+        }
+        
+        .footer a {
+            color: #FFD700;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer a:hover {
+            color: #D2691E;
+            text-decoration: underline;
+        }
+        
+        /* Chocolate Crumbs */
+        .chocolate-crumbs {
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            z-index: 1;
+            transform-style: preserve-3d;
+        }
+        
+        .crumb {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(45deg, #F5E6D3, #E8D0B3);
+            border-radius: 50%;
+            bottom: 0;
+            opacity: 0;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+        }
+        
+        @keyframes crumbFall {
+            0% { transform: translateY(0) rotate(0deg) translateZ(0); opacity: 1; }
+            100% { transform: translateY(80px) rotate(180deg) translateZ(20px); opacity: 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                margin: 80px 10px 20px;
+                padding: 15px;
+            }
+            
+            .scene {
+                width: 250px;
+                height: 400px;
+            }
+            
+            .chocolate-face.right {
+                transform: rotateY(90deg) translateZ(125px);
+            }
+            
+            .chocolate-face.left {
+                transform: rotateY(-90deg) translateZ(125px);
+            }
+            
+            .chocolate-face.top {
+                transform: rotateX(90deg) translateZ(200px);
+            }
+            
+            .chocolate-face.bottom {
+                transform: rotateX(-90deg) translateZ(200px);
+            }
+            
+            .game-title {
+                font-size: 2rem;
+            }
+            
+            .names-display {
+                font-size: 32px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Romantic 3D Background -->
+    <div class="background-container" id="backgroundContainer">
+        <div class="background-3d" id="background3d">
+            <div class="background-plane front"></div>
+            <div class="background-plane back"></div>
+            <div class="background-plane left"></div>
+            <div class="background-plane right"></div>
+            <div class="background-plane top"></div>
+            <div class="background-plane bottom"></div>
+            
+            <!-- Floating Hearts -->
+            <div id="heartsContainer"></div>
+            
+            <!-- Names Display -->
+            <div class="names-display">
+                HARSH <span style="color:#ff4d8d; margin:0 15px;">❤️</span> ANABEL
+            </div>
+            
+            <!-- Secret Symbol -->
+            <div class="secret-symbol" id="secretSymbol">
+                <div style="margin-bottom: 20px;">
+                    <i class="fas fa-heart"></i>
+                    <i class="fas fa-fire"></i>
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="secret-text">PASSION'S EMBRACE</div>
+                <div class="secret-subtext">
+                    A hidden desire revealed<br>in chocolate and code
+                </div>
+                <div style="margin-top: 30px; font-size: 14px; opacity: 0.6;">
+                    💋 🔥 💕
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Secret Hint -->
+    <div class="secret-hint">
+        <i class="fas fa-eye"></i> Explore the 3D background to discover hidden romantic secrets...
+    </div>
+    
+    <!-- Main Game Container -->
+    <div class="game-container">
+        <header class="game-header">
+            <h1 class="game-title"><i class="fas fa-heart"></i> Chocolate Day Game <i class="fas fa-heart"></i></h1>
+            <p class="game-subtitle">A Sweet 3D Chocolate Experience</p>
+            <p class="game-instructions">Share the sweetness with someone special</p>
+        </header>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="control-btn" id="resetView">
+                <i class="fas fa-sync-alt"></i> Reset View
+            </button>
+            <button class="control-btn" id="autoRotate">
+                <i class="fas fa-redo"></i> Auto-Rotate
+            </button>
+            <button class="control-btn active" id="bgControl">
+                <i class="fas fa-expand-arrows-alt"></i> Explore 3D Space
+            </button>
+            <button class="control-btn" id="soundToggle">
+                <i class="fas fa-volume-up"></i> Sound On
+            </button>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="instructions-box">
+            <div class="instruction">
+                <i class="fas fa-mouse-pointer"></i>
+                <span>Click chocolate to take sweet bites</span>
+            </div>
+            <div class="instruction">
+                <i class="fas fa-arrows-alt"></i>
+                <span>Drag background to explore romantic 3D space</span>
+            </div>
+            <div class="instruction">
+                <i class="fas fa-search"></i>
+                <span>Find hidden romantic secrets at 360° rotation</span>
+            </div>
+            <div class="instruction">
+                <i class="fas fa-heart"></i>
+                <span>Enjoy this chocolate day celebration!</span>
+            </div>
+        </div>
+        
+        <!-- Game Scene -->
+        <div class="chocolate-wrapper">
+            <div class="scene" id="scene">
+                <div class="chocolate-3d" id="chocolate3d">
+                    <div class="bite-count" id="biteCount">5</div>
+                    
+                    <!-- Front face -->
+                    <div class="chocolate-face front">
+                        <div class="bite-mask" id="biteMask"></div>
+                        <div class="chocolate-segments">
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Back face -->
+                    <div class="chocolate-face back">
+                        <div class="chocolate-segments">
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                            <div class="segment"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Side faces -->
+                    <div class="chocolate-face right"></div>
+                    <div class="chocolate-face left"></div>
+                    
+                    <!-- Top and bottom faces -->
+                    <div class="chocolate-face top"></div>
+                    <div class="chocolate-face bottom"></div>
+                </div>
+            </div>
+            <div class="chocolate-crumbs" id="crumbContainer"></div>
+        </div>
+        
+        <!-- Popup Overlay -->
+        <div class="overlay" id="overlay"></div>
+        
+        <!-- Message Popup -->
+        <div class="message-popup" id="messagePopup">
+            <h2>Happy Chocolate Day!</h2>
+            <p id="messageText">Every bite of chocolate is sweeter when shared with love!</p>
+            <button id="closePopup">Continue Sweet Journey</button>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Chocolate Day Game | Created with <i class="fas fa-heart" style="color:#FFD700;"></i> for Harsh & Anabel</p>
+            <p style="font-size: 0.9rem; margin-top: 10px; opacity: 0.7;">
+                A romantic 3D chocolate experience with hidden secrets
+            </p>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="biteSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-biting-into-crispy-food-2243.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="rotateSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-whoosh-1126.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="romanticSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-romantic-heartbeat-1154.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="secretSound" preload="auto">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-magic-sparkle-300.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // Game Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game Elements
+            const chocolate3d = document.getElementById('chocolate3d');
+            const scene = document.getElementById('scene');
+            const biteMask = document.getElementById('biteMask');
+            const biteCount = document.getElementById('biteCount');
+            const messagePopup = document.getElementById('messagePopup');
+            const messageText = document.getElementById('messageText');
+            const overlay = document.getElementById('overlay');
+            const closePopup = document.getElementById('closePopup');
+            const crumbContainer = document.getElementById('crumbContainer');
+            const resetViewBtn = document.getElementById('resetView');
+            const autoRotateBtn = document.getElementById('autoRotate');
+            const bgControlBtn = document.getElementById('bgControl');
+            const soundToggleBtn = document.getElementById('soundToggle');
+            
+            // Background Elements
+            const backgroundContainer = document.getElementById('backgroundContainer');
+            const background3d = document.getElementById('background3d');
+            const heartsContainer = document.getElementById('heartsContainer');
+            const secretSymbol = document.getElementById('secretSymbol');
+            
+            // Audio Elements
+            const biteSound = document.getElementById('biteSound');
+            const rotateSound = document.getElementById('rotateSound');
+            const romanticSound = document.getElementById('romanticSound');
+            const secretSound = document.getElementById('secretSound');
+            
+            // Game Variables
+            let bitesTaken = 0;
+            const totalBites = 5;
+            const bitePercentage = 20;
+            
+            // 3D Variables
+            let isBgDragging = false;
+            let previousBgMouseX = 0;
+            let previousBgMouseY = 0;
+            let bgRotateX = 10;
+            let bgRotateY = 0;
+            let autoBgRotate = false;
+            let controlBackground = true;
+            let totalRotation = 0;
+            let secretRevealed = false;
+            let soundEnabled = true;
+            
+            // Messages
+            const messages = [
+                "Life is like chocolate: it's best when shared with someone sweet!",
+                "A little chocolate a day keeps the worries away! Happy Chocolate Day!",
+                "Chocolate is the answer, who cares what the question is!",
+                "Forget love, I'd rather fall in chocolate! Enjoy your day!",
+                "All you need is love and a little chocolate. Happy Chocolate Day!"
+            ];
+            
+            // Initialize
+            createHearts();
+            biteMask.style.clipPath = 'polygon(0 0, 100% 0, 100% 100%, 0 100%)';
+            updateBgRotation();
+            
+            // Event Listeners
+            backgroundContainer.addEventListener('mousedown', startBgDrag);
+            backgroundContainer.addEventListener('touchstart', startBgDragTouch);
+            document.addEventListener('mousemove', bgDrag);
+            document.addEventListener('touchmove', bgDragTouch);
+            document.addEventListener('mouseup', stopBgDrag);
+            document.addEventListener('touchend', stopBgDrag);
+            chocolate3d.addEventListener('click', takeBite);
+            resetViewBtn.addEventListener('click', resetBgRotation);
+            autoRotateBtn.addEventListener('click', toggleAutoBgRotate);
+            bgControlBtn.addEventListener('click', toggleBgControl);
+            soundToggleBtn.addEventListener('click', toggleSound);
+            closePopup.addEventListener('click', closePopupWindow);
+            
+            // Functions
+            function createHearts() {
+                for (let i = 0; i < 30; i++) {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart';
+                    heart.innerHTML = '❤️';
+                    
+                    heart.style.left = Math.random() * 100 + '%';
+                    heart.style.top = Math.random() * 100 + '%';
+                    
+                    const size = 10 + Math.random() * 30;
+                    heart.style.fontSize = size + 'px';
+                    
+                    const delay = Math.random() * 15;
+                    const duration = 10 + Math.random() * 20;
+                    heart.style.animationDelay = delay + 's';
+                    heart.style.animationDuration = duration + 's';
+                    
+                    const colors = ['#ff4d8d', '#ff6b9d', '#ff8ab0'];
+                    heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    heartsContainer.appendChild(heart);
+                }
+            }
+            
+            function startBgDrag(e) {
+                isBgDragging = true;
+                previousBgMouseX = e.clientX;
+                previousBgMouseY = e.clientY;
+                backgroundContainer.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+            
+            function startBgDragTouch(e) {
+                if (e.touches.length !== 1) return;
+                isBgDragging = true;
+                previousBgMouseX = e.touches[0].clientX;
+                previousBgMouseY = e.touches[0].clientY;
+                e.preventDefault();
+            }
+            
+            function bgDrag(e) {
+                if (!isBgDragging) return;
+                
+                const deltaX = e.clientX - previousBgMouseX;
+                const deltaY = e.clientY - previousBgMouseY;
+                
+                bgRotateY += deltaX * 0.3;
+                bgRotateX -= deltaY * 0.2;
+                totalRotation += Math.abs(deltaX) * 0.3;
+                
+                if (totalRotation > 360 && !secretRevealed) {
+                    revealSecret();
+                }
+                
+                bgRotateX = Math.max(-60, Math.min(60, bgRotateX));
+                updateBgRotation();
+                
+                previousBgMouseX = e.clientX;
+                previousBgMouseY = e.clientY;
+                
+                if (soundEnabled && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+                    rotateSound.currentTime = 0;
+                    rotateSound.volume = 0.2;
+                    rotateSound.play();
+                }
+            }
+            
+            function bgDragTouch(e) {
+                if (!isBgDragging || e.touches.length !== 1) return;
+                
+                const deltaX = e.touches[0].clientX - previousBgMouseX;
+                const deltaY = e.touches[0].clientY - previousBgMouseY;
+                
+                bgRotateY += deltaX * 0.3;
+                bgRotateX -= deltaY * 0.2;
+                totalRotation += Math.abs(deltaX) * 0.3;
+                
+                if (totalRotation > 360 && !secretRevealed) {
+                    revealSecret();
+                }
+                
+                bgRotateX = Math.max(-60, Math.min(60, bgRotateX));
+                updateBgRotation();
+                
+                previousBgMouseX = e.touches[0].clientX;
+                previousBgMouseY = e.touches[0].clientY;
+                e.preventDefault();
+            }
+            
+            function stopBgDrag() {
+                isBgDragging = false;
+                backgroundContainer.style.cursor = 'grab';
+            }
+            
+            function updateBgRotation() {
+                background3d.style.transform = `rotateX(${bgRotateX}deg) rotateY(${bgRotateY}deg)`;
+            }
+            
+            function resetBgRotation() {
+                bgRotateX = 10;
+                bgRotateY = 0;
+                updateBgRotation();
+                
+                background3d.style.transition = 'transform 1s ease';
+                setTimeout(() => {
+                    background3d.style.transition = 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)';
+                }, 1000);
+                
+                if (soundEnabled) {
+                    rotateSound.currentTime = 0;
+                    rotateSound.volume = 0.3;
+                    rotateSound.play();
+                }
+            }
+            
+            function toggleAutoBgRotate() {
+                autoBgRotate = !autoBgRotate;
+                autoRotateBtn.innerHTML = autoBgRotate ? 
+                    '<i class="fas fa-pause"></i> Stop Rotation' : 
+                    '<i class="fas fa-redo"></i> Auto-Rotate';
+                autoRotateBtn.classList.toggle('active', autoBgRotate);
+                
+                if (autoBgRotate) {
+                    autoBgRotateAnimation();
+                }
+            }
+            
+            function autoBgRotateAnimation() {
+                if (!autoBgRotate) return;
+                
+                bgRotateY += 0.5;
+                totalRotation += 0.5;
+                
+                if (totalRotation > 360 && !secretRevealed) {
+                    revealSecret();
+                }
+                
+                updateBgRotation();
+                requestAnimationFrame(autoBgRotateAnimation);
+            }
+            
+            function toggleBgControl() {
+                controlBackground = !controlBackground;
+                bgControlBtn.innerHTML = controlBackground ? 
+                    '<i class="fas fa-gamepad"></i> Control Chocolate' : 
+                    '<i class="fas fa-expand-arrows-alt"></i> Explore 3D Space';
+                bgControlBtn.classList.toggle('active', controlBackground);
+                
+                if (controlBackground) {
+                    backgroundContainer.style.cursor = 'grab';
+                    scene.style.pointerEvents = 'none';
+                } else {
+                    backgroundContainer.style.cursor = 'default';
+                    scene.style.pointerEvents = 'auto';
+                }
+            }
+            
+            function toggleSound() {
+                soundEnabled = !soundEnabled;
+                soundToggleBtn.innerHTML = soundEnabled ? 
+                    '<i class="fas fa-volume-up"></i> Sound On' : 
+                    '<i class="fas fa-volume-mute"></i> Sound Off';
+                soundToggleBtn.classList.toggle('active', !soundEnabled);
+            }
+            
+            function revealSecret() {
+                secretRevealed = true;
+                secretSymbol.classList.add('active');
+                
+                if (soundEnabled) {
+                    secretSound.currentTime = 0;
+                    secretSound.volume = 0.5;
+                    secretSound.play();
+                    
+                    setTimeout(() => {
+                        romanticSound.currentTime = 0;
+                        romanticSound.volume = 0.3;
+                        romanticSound.play();
+                    }, 500);
+                }
+                
+                // Update hint
+                document.querySelector('.secret-hint').innerHTML = 
+                    '<i class="fas fa-star"></i> Secret Discovered! Passion revealed!';
+                
+                // Create celebration hearts
+                for (let i = 0; i < 15; i++) {
+                    setTimeout(() => {
+                        const heart = document.createElement('div');
+                        heart.className = 'heart';
+                        heart.innerHTML = '💖';
+                        heart.style.left = '50%';
+                        heart.style.top = '50%';
+                        heart.style.fontSize = '30px';
+                        heart.style.color = '#FFD700';
+                        heart.style.animationDuration = '3s';
+                        heart.style.zIndex = '100';
+                        heart.style.opacity = '0.8';
+                        heartsContainer.appendChild(heart);
+                        
+                        setTimeout(() => {
+                            if (heart.parentNode) {
+                                heart.parentNode.removeChild(heart);
+                            }
+                        }, 3000);
+                    }, i * 100);
+                }
+            }
+            
+            function takeBite(e) {
+                if (bitesTaken >= totalBites) return;
+                
+                if (soundEnabled) {
+                    biteSound.currentTime = 0;
+                    biteSound.play();
+                }
+                
+                bitesTaken++;
+                biteCount.textContent = totalBites - bitesTaken;
+                createCrumbs();
+                
+                const biteHeight = 100 - (bitePercentage * bitesTaken);
+                biteMask.style.clipPath = `polygon(0 0, 100% 0, 100% ${biteHeight}%, 0 ${biteHeight}%)`;
+                
+                chocolate3d.style.transform += ' scale(0.95)';
+                setTimeout(() => {
+                    chocolate3d.style.transform = `rotateX(15deg) rotateY(0deg)`;
+                }, 150);
+                
+                if (bitesTaken >= totalBites) {
+                    setTimeout(() => {
+                        showMessage();
+                    }, 2000);
+                }
+                
+                e.stopPropagation();
+            }
+            
+            function createCrumbs() {
+                const crumbCount = 5 + Math.floor(Math.random() * 10);
+                
+                for (let i = 0; i < crumbCount; i++) {
+                    const crumb = document.createElement('div');
+                    crumb.classList.add('crumb');
+                    
+                    crumb.style.left = (10 + Math.random() * 80) + '%';
+                    
+                    const size = 4 + Math.random() * 10;
+                    crumb.style.width = size + 'px';
+                    crumb.style.height = size + 'px';
+                    
+                    crumbContainer.appendChild(crumb);
+                    
+                    const duration = 0.5 + Math.random() * 1;
+                    crumb.style.animation = `crumbFall ${duration}s forwards`;
+                    
+                    setTimeout(() => {
+                        if (crumb.parentNode) {
+                            crumb.parentNode.removeChild(crumb);
+                        }
+                    }, duration * 1000);
+                }
+            }
+            
+            function showMessage() {
+                const randomIndex = Math.floor(Math.random() * messages.length);
+                messageText.textContent = messages[randomIndex];
+                
+                messagePopup.classList.add('active');
+                overlay.classList.add('active');
+                
+                if (soundEnabled) {
+                    romanticSound.currentTime = 0;
+                    romanticSound.volume = 0.4;
+                    romanticSound.play();
+                }
+            }
+            
+            function closePopupWindow() {
+                messagePopup.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
